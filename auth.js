@@ -23,6 +23,49 @@ const hashPassword = (req, res, next) => {
     });
 };
 
+const verifyPassword = (req, res) => {
+  argon2.verify(req.user.hashedPassword, req.body.password)
+  .then((isVerified) => {
+    if(isVerified){
+      res.send("Credential are vazlid");
+    } else {
+      res.sendStatus(401);
+    }
+  })
+  .catch((err) => {
+    console.error(err);
+    res.send(req.user);
+});
+};
+
+// ...
+
+const verifyToken = (req, res, next) => {
+  try {
+    const authorizationHeader = req.get("Authorization");
+
+    if (authorizationHeader == null) {
+      throw new Error("Authorization header is missing");
+    }
+
+    const [type, token] = authorizationHeader.split(" ");
+
+    if (type !== "Bearer") {
+      throw new Error("Authorization header has not the 'Bearer' type");
+    }
+
+    req.payload = jwt.verify(token, process.env.JWT_SECRET);
+
+    next();
+  } catch (err) {
+    console.error(err);
+    res.sendStatus(401);
+  }
+};
+
+
 module.exports = {
   hashPassword,
+  verifyPassword,
+  verifyToken,
 };
